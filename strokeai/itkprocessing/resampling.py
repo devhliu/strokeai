@@ -12,7 +12,9 @@
 """
 
 import numpy as np
+import nibabel as nib
 import SimpleITK as sitk
+from glob import glob
 
 #-------------------------------------------------------------------------------
 # resample sitk_image to referenced sitk_image
@@ -209,15 +211,45 @@ def resample_sitk_image_with_preserved_spatial_spacing(sitk_image,
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    """
     import os
-    root = 'E:\\hIBIZ\\Projects\\2020\\2020_07_30_Stroke\\001_references\\TOF_MRA_Altas_nii'
+    root = 'F:\\WuhanUnionLiver\\HSOS-MRI\\nii_seg\HBP_tmp'
+    pns = ['FENG_XING_HE', 'HUANG_WEI_CHENG', 'LIANG_FA_YUAN', 'LIAO_ZHENG_QUAN']
+    for pn in pns:
+        nii_file = os.path.join(root, pn + '_img.nii.gz')
+        sitk_img = sitk.ReadImage(nii_file)
+        seg_file = os.path.join(root, pn + '_seg.nii.gz')
+        sitk_seg = sitk.ReadImage(seg_file)
+        sitk_seg_1 = resample_sitk_image_by_reference(sitk_img, sitk_seg)
+        sitk.WriteImage(sitk_seg_1, os.path.join(root, pn + '_seg.nii.gz'))
+        nib_img = nib.load(os.path.join(root, pn + '_seg.nii.gz'))
+        nib_img_1 = nib.Nifti1Image(nib_img.get_fdata().astype(np.int8), affine=nib_img.affine)
+        nib.save(nib_img_1, os.path.join(root, pn + '_seg.nii.gz'))
+    """
 
-    nii_file = os.path.join(root, '1358935.nii.gz')
-    sitk_img = sitk.ReadImage(nii_file)
-    # resampling for AI
-    sitk_img_1mm = resample_sitk_image_with_preserved_spatial_range(sitk_img, spacing=(0.5, 0.5, 1.0))
-    sitk_img_2mm = resample_sitk_image_with_preserved_spatial_range(sitk_img, spacing=(0.5, 0.5, 2.0))
-    sitk_img_5mm = resample_sitk_image_with_preserved_spatial_range(sitk_img, spacing=(0.5, 0.5, 5.0))
-    sitk.WriteImage(sitk_img_1mm, nii_file.replace('.nii.gz', '_1mm.nii.gz'))
-    sitk.WriteImage(sitk_img_2mm, nii_file.replace('.nii.gz', '_2mm.nii.gz'))
-    sitk.WriteImage(sitk_img_5mm, nii_file.replace('.nii.gz', '_5mm.nii.gz'))
+    import os
+    resample_root = 'D:\\DICOMDB\SYUCC\\nii_images'
+    tar_root = 'D:\\DICOMDB\SYUCC\\niigz_images'
+    patient_names = os.listdir(resample_root)
+    for patient_name in patient_names:
+        print('working on %s'%(patient_name))
+
+        patient_root = os.path.join(resample_root, patient_name)
+        tarp_root = os.path.join(tar_root, patient_name)
+        os.makedirs(tarp_root)
+
+        sitk_img_ref = sitk.ReadImage(os.path.join(patient_root, 'SUV_50-60min.nii'))
+        names = ['patlak_Ki_20-60min', 'patlak_intercept_20-60min']
+
+        for name in names:
+            sitk_img = sitk.ReadImage(os.path.join(patient_root, name+'.nii'))
+            sitk_img_1 = resample_sitk_image_by_reference(sitk_img_ref, sitk_img)
+            np_img_1 = sitk.GetArrayFromImage(sitk_img_1)
+            np_img_2 = np_img_1[::-1, :, :]
+            sitk_img_2 = sitk.GetImageFromArray(np_img_2)
+            sitk_img_2.SetOrigin(sitk_img_ref.GetOrigin())
+            sitk_img_2.SetDirection(sitk_img_ref.GetDirection())
+            sitk_img_2.SetSpacing(sitk_img_ref.GetSpacing())
+            sitk.WriteImage(sitk_img_2, os.path.join(os.path.join(tarp_root, name+'.nii.gz')))
+
+        sitk.WriteImage(sitk_img_ref, os.path.join(tarp_root, 'SUV_50-60min.nii.gz'))

@@ -1,5 +1,5 @@
 """
-    Program: strokeai/itkprocessing
+    Program: strokeai/data
         
     A python wrapped medical imaging processing tools for stroke
 
