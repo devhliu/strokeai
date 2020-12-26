@@ -25,7 +25,7 @@ def generate_info(dcm_root):
     :return:
     """
     dcmtags = {'SeriesInstanceUID': [], 'SeriesDescription': [], 'PatientName': [],
-               'PatientID': [], 'Modality': [], 'StudyDateTime': [],
+               'PatientID': [], 'Modality': [], 'StudyDateTime': [], 'InstitutionName': [],
                'Spacing_X': [], 'Spacing_Y': [], 'Spacing_Z': [],
                'AKAFileName': [], 'SubRoot': []}
     for sub_root, _, files in os.walk(dcm_root):
@@ -44,6 +44,7 @@ def generate_info(dcm_root):
                 pname = ds.PatientName
                 pid = ds.PatientID
                 modality = ds.Modality
+                institution = ds.InstitutionName
                 studydatetime = ds.StudyDate + ds.StudyTime
                 dcmtags['SeriesInstanceUID'].append(suid)
                 dcmtags['SeriesDescription'].append(sdesp)
@@ -51,6 +52,7 @@ def generate_info(dcm_root):
                 dcmtags['PatientID'].append(pid)
                 dcmtags['StudyDateTime'].append(studydatetime)
                 dcmtags['Modality'].append(modality)
+                dcmtags['InstitutionName'].append(institution)
                 dcmtags['AKAFileName'].append('')
                 dcmtags['SubRoot'].append(sub_root)
             except: continue
@@ -114,7 +116,7 @@ def cp_nii_by_info(tmp_folder, nii_folder, info_xlsx_file):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    dcmroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\001_dicom_2'
+    dcmroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\001_dicom_004'
     tmproot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\tmp'
     niiroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\002_niix_2'
 
@@ -127,7 +129,7 @@ if __name__ == '__main__':
         print('working on %s'%os.path.basename(sub_dcmroot))
         dfs.append(generate_info(sub_dcmroot))
     df = pd.concat(dfs, axis=0)
-    df.to_excel(os.path.join(dcmroot, 'dump.xlsx'))
+    df.to_excel(os.path.join(dcmroot, 'dcm_index.xlsx'))
 
 
     # step 2: update dump.xlsx

@@ -19,6 +19,7 @@ import pandas as pd
 import nibabel as nib
 import numpy as np
 
+from glob import glob
 from pydicom.misc import is_dicom
 
 #------------------------------------------------------------------------------
@@ -146,6 +147,8 @@ def organize_by_uid(src_dcm_root, target_dcm_root):
             if dcm_file.endswith('.json'): continue
             if dcm_file.endswith('.nii'): continue
             if dcm_file.endswith('.nii.gz'): continue
+            if dcm_file.endswith('.img'): continue
+            if dcm_file.endswith('.hdr'): continue
             if not is_dicom(dcm_file): continue
             ds = pydicom.read_file(dcm_file, stop_before_pixels=True, force=True)
             suid = str(ds.SeriesInstanceUID)
@@ -183,10 +186,10 @@ def extract_hb_dwi(niix_root):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    dcmroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\30cases'
-    tmproot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\tmp'
-    niiroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\002_niix_3'
-    dcmroot_1 = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\001_dicom_3'
+    #dcmroot = 'D:\\UII\\nanjing_CT_DWI\\ROI1'
+    #tmproot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\tmp'
+    #niiroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\002_niix_3'
+    #dcmroot_1 = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\001_dicom_004'
     #organize_by_uid(dcmroot, dcmroot_1)
 
 
@@ -209,3 +212,26 @@ if __name__ == '__main__':
 
     #create_nii_by_info(niiroot, os.path.join(dcmroot_1, 'dump_working.xlsx'))
     # extract_hb_dwi(niiroot)
+
+    niix_root = 'D:\\UII\\organizedImages'
+    tar_niix_root = 'H:\\data\\CT_ASPECT\\nomi'
+    filenames = ['brain_aspects_seg.nii.gz', 'ct_3D_rotated_skull_stripped.nii.gz',
+                 'cbf.nii.gz', 'mask_cbf.nii.gz']
+    tfilenames = ['NCCT_aspects_seg.nii.gz', 'NCCT_skull_stripped.nii.gz',
+                  'cbf.nii.gz', 'cbf_mask.nii.gz']
+    sub_patient_roots = os.listdir(niix_root)
+    for sub_patient_root in sub_patient_roots:
+        patient_id = sub_patient_root.split('_')[-1]
+        _files = glob(os.path.join(niix_root, sub_patient_root, '*.nii.gz'))
+        files = [os.path.basename(_file) for _file in _files]
+        mask = [False, ] * len(filenames)
+        for i, filename in enumerate(filenames):
+            if filename in files: mask[i] = True
+        print(mask)
+        if all(mask):
+            sub = os.path.join(tar_niix_root, '1001'+patient_id+'1001')
+            os.makedirs(sub, exist_ok=True)
+            print('working on %s'%(sub_patient_root))
+            for f1, f2 in zip(filenames, tfilenames):
+                shutil.copyfile(os.path.join(os.path.join(niix_root, sub_patient_root, f1)),
+                                os.path.join(os.path.join(sub, f2)))
