@@ -20,6 +20,67 @@ from pydicom.misc import is_dicom
 
 #------------------------------------------------------------------------------
 #
+def _is_dcm_ext(file):
+    """
+    :param file:
+    :return:
+    """
+    if file.endswith('.txt'): return False
+    if file.endswith('.json'): return False
+    if file.endswith('.nii'): return False
+    if file.endswith('.nii.gz'): return False
+    if file.endswith('.bval'): return False
+    if file.endswith('.bvec'): return False
+    if file.endswith('.xlsx'): return False
+    if file.endswith('.hdr'): return False
+    if file.endswith('.img'): return False
+    if file.endswith('.raw'): return False
+    if file.endswith('.roi'): return False
+    if file.endswith('.mat'): return False
+    if file.endswith('.ps'): return False
+    if file.endswith('ICOMDIR'): return False
+    return True
+#------------------------------------------------------------------------------
+#
+def _create_pid_pname(ds):
+    """
+    :param ds:  pydicom dataset
+    :return:    PID.xxxx.PNAME....
+    """
+    _pattern = re.compile('\w')
+    # patient uid
+    if ds.get('PatientName') is None:
+        _patient_name = str(ds.StudyInstanceUID)
+    else:
+        _patient_name_0 = _pattern.match(str(ds.PatientName))
+        if _patient_name_0 is None:
+            _patient_name = str(ds.PatientName).upper().replace(' ', '')
+        else:
+            _patient_name = _patient_name_0.string.upper().replace(' ', '')
+    return 'PID.' + str(ds.PatientID) + '.PNAME.' + _patient_name.replace('_', '')
+#------------------------------------------------------------------------------
+#
+def generate_dcm_index_for_pid_pname(dcm_root_0, dcm_root_1):
+    """
+    :param dcm_root:
+    :return:
+    """
+    dcmtags = {'PIDPNAME': [], 'COPIED': [], 'SUBROOT': []}
+    pnames = os.listdir(dcm_root_0)
+    pidnames = os.listdir(dcm_root_1)
+    for pname in pnames:
+        pid = pname.split('_')[-1]
+        _pname = pname.replace(pid, '')
+        _pname = _pname.replace('_', '').upper()
+        _pidname = 'PID.'+pid+'.PNAME.'+_pname
+        dcmtags['PIDPNAME'].append(_pidname)
+        if _pidname in pidnames: dcmtags['COPIED'].append(True)
+        else: dcmtags['COPIED'].append(False)
+        dcmtags['SUBROOT'].append(pname)
+    return pd.DataFrame(dcmtags)
+
+#------------------------------------------------------------------------------
+#
 def generate_dcm_index(dcm_root):
     """
     :param dcm_root:
@@ -35,14 +96,8 @@ def generate_dcm_index(dcm_root):
         print('working on %s ...'%(sub_root))
         for file in files:
             dcm_file = os.path.join(sub_root, file)
-            if dcm_file.endswith('.json'): continue
-            if dcm_file.endswith('.nii'): continue
-            if dcm_file.endswith('.nii.gz'): continue
-            if dcm_file.endswith('.bval'): continue
-            if dcm_file.endswith('.bvec'): continue
-            if dcm_file.endswith('.xlsx'): continue
-            if dcm_file.endswith('ICOMDIR'): continue
-            #if not is_dicom(dcm_file): continue
+            if not _is_dcm_ext(dcm_file): continue
+            if not is_dicom(dcm_file): continue
             ds = pydicom.read_file(dcm_file, stop_before_pixels=True, force=True)
             if ds.SeriesInstanceUID in dcmtags['SeriesInstanceUID']: continue
             try:
@@ -81,27 +136,15 @@ def organize_dcm_byuid(src_dcm_root, target_dcm_root):
     :param target_dcm_root:
     :return:
     """
-    _pattern = re.compile('\w')
     for sub_root, _, files in os.walk(src_dcm_root):
         if len(files) <= 0: continue
         print('working on %s ...' % (sub_root))
+
+        # copy each dcm file
         for file in files:
             dcm_file = os.path.join(sub_root, file)
-            if dcm_file.endswith('.txt'): continue
-            if dcm_file.endswith('.json'): continue
-            if dcm_file.endswith('.nii'): continue
-            if dcm_file.endswith('.nii.gz'): continue
-            if dcm_file.endswith('.bval'): continue
-            if dcm_file.endswith('.bvec'): continue
-            if dcm_file.endswith('.xlsx'): continue
-            if dcm_file.endswith('.hdr'): continue
-            if dcm_file.endswith('.img'): continue
-            if dcm_file.endswith('.raw'): continue
-            if dcm_file.endswith('.roi'): continue
-            if dcm_file.endswith('.mat'): continue
-            if dcm_file.endswith('.ps'): continue
-            if dcm_file.endswith('ICOMDIR'): continue
-            # if not is_dicom(dcm_file): continue
+            if not _is_dcm_ext(dcm_file): continue
+            if not is_dicom(dcm_file): continue
             ds = pydicom.read_file(dcm_file, stop_before_pixels=True, force=True)
             # series uid
             series_uid = str(ds.SeriesInstanceUID)
@@ -109,12 +152,7 @@ def organize_dcm_byuid(src_dcm_root, target_dcm_root):
             if ds.get('StudyDate') is None or ds.get('StudyTime') is None: study_uid = str(ds.StudyInstanceUID)
             else: study_uid = str(ds.StudyDate + ds.StudyTime)[:14]
             # patient uid
-            if ds.get('PatientName') is None: _patient_name = str(ds.StudyInstanceUID)
-            else:
-                _patient_name_0 = _pattern.match(str(ds.PatientName))
-                if _patient_name_0 is None: _patient_name = str(ds.PatientName).upper().replace(' ', '')
-                else: _patient_name = _patient_name_0.string.upper().replace(' ', '')
-            patient_uid = 'PID.' + str(ds.PatientID) + '.PNAME.' + _patient_name.replace('_', '')
+            patient_uid = _create_pid_pname(ds)
             # sorting files into patient_uid/study_uid/series_uid structure
             filename = str(ds.SOPInstanceUID) + '.dcm'
             file_root = os.path.join(target_dcm_root, patient_uid, study_uid, series_uid)
@@ -123,6 +161,40 @@ def organize_dcm_byuid(src_dcm_root, target_dcm_root):
             if os.path.exists(dcm_file_cp): continue
             shutil.copyfile(dcm_file, dcm_file_cp)
     return
+
+#------------------------------------------------------------------------------
+#
+def organize_by_csv(csv_file, dcm_root_0, dcm_root_1):
+    """
+    :param csv_file:
+    :param dcm_root_0:
+    :param dcm_root_1:
+    :return:
+    """
+    df = pd.read_csv(csv_file)
+    subroots = df['SUBROOT'].values
+    copieds = df['COPIED'].values
+    pidpnames = df['PIDPNAME'].values
+
+    for subroot, copied, pidpname in zip(subroots, copieds, pidpnames):
+        if copied:
+            print('%s is already copied to %s.'%(subroot, pidpname))
+        else:
+            try:
+                organize_dcm_byuid(os.path.join(dcm_root_0, subroot), dcm_root_1)
+            except:
+                print('failed to copy %s - %s.'%(subroot, pidpname))
+    return
+#------------------------------------------------------------------------------
+#
+def copy_folder_info(dcm_root_0, dcm_root_1):
+    """
+    :param dcm_root_0:
+    :param dcm_root_1:
+    :return:
+    """
+
+
 #------------------------------------------------------------------------------
 #
 def cp_nii_by_info(tmp_folder, nii_folder, info_xlsx_file):
@@ -173,10 +245,20 @@ def cp_nii_by_info(tmp_folder, nii_folder, info_xlsx_file):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    dcmroot = 'H:\\data\\CT_ASPECT\\RAPID_Result'
-    dcmroot_2 = 'H:\\data\\SHA_6TH_HOSPITAL\\001_STROKE_CTP\\001_DICOM_HUAXI_HOSPITAL'
+    dcmroot = 'E:\\test'
+    dcmroot_2 = 'D:\\ISLES\\RAPID_HX\\001_DCM'
 
-    organize_dcm_byuid(dcmroot, dcmroot_2)
+    csv_file = os.path.join(dcmroot_2, 'convert_working.csv')
+    df_0 = generate_dcm_index_for_pid_pname(os.path.join(dcmroot, 'RAPID_Result_0'), dcmroot_2)
+    df_1 = generate_dcm_index_for_pid_pname(os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+    df = pd.concat([df_0, df_1], axis=0)
+    df.to_csv(csv_file)
+
+    # organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_0'), dcmroot_2)
+    organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+
+    #organize_dcm_byuid(dcmroot, dcmroot_2)
+
     #df = generate_dcm_index(dcmroot_2)
     #df.to_excel(os.path.join(dcmroot_2, 'dcm_index.xlsx'))
 
