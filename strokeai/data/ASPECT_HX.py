@@ -209,6 +209,7 @@ def copy_folder_info(dcm_root_0, dcm_root_1):
     :return:
     """
     return
+<<<<<<< HEAD
 #------------------------------------------------------------------------------
 #
 def get_subfold_info(directory_root):
@@ -223,6 +224,9 @@ def get_subfold_info(directory_root):
         pname_info['PIDPNAME'].append(pname)
         pname_info['Size(MB)'].append(_get_path_size(pname_root)/(1024**3))
     return pd.DataFrame(pname_info)
+=======
+
+>>>>>>> 028286cb95d540cc42383ba1e4b179d096fd0d44
 
 #------------------------------------------------------------------------------
 #
