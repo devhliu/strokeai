@@ -105,7 +105,7 @@ def cp_nii_by_info(tmp_folder, nii_folder, info_xlsx_file):
                     shutil.copyfile(src_bval_file, target_bval_file)
                     shutil.copyfile(src_bvec_file, target_bvec_file)
                 except:
-                    print('... failed to copy %s - %s - %s - %s' % (pid, pname, str(sdt)[:12], akafilename))
+                    print('... failed to copy %s - %s - %s - %s'%(pid, pname, str(sdt)[:12], akafilename))
     return
 
 

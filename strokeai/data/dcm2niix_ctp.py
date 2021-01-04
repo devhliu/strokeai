@@ -80,7 +80,7 @@ def obselete_main():
 
     subj_names = df['subj_name'].to_list()
     if df.get('OnsiteTime(h)') is None:
-        df_onsitetime = pd.DataFrame({'OnsiteTime(h)':[0, ]*len(subj_names)})
+        df_onsitetime = pd.DataFrame({'OnsiteTime(h)': [0, ]*len(subj_names)})
         df = pd.concat([df, df_onsitetime], axis=1)
     onsitetimes = df['OnsiteTime(h)'].to_list()
     ages = df['Age'].to_list()

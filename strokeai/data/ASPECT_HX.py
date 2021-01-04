@@ -193,6 +193,7 @@ def copy_folder_info(dcm_root_0, dcm_root_1):
     :param dcm_root_1:
     :return:
     """
+    return
 
 
 #------------------------------------------------------------------------------
