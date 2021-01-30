@@ -60,6 +60,21 @@ def _create_pid_pname(ds):
     return 'PID.' + str(ds.PatientID) + '.PNAME.' + _patient_name.replace('_', '')
 #------------------------------------------------------------------------------
 #
+def _get_path_size(start_path='.'):
+    total_size = 0
+    seen = {}
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            try: stat = os.stat(fp)
+            except OSError: continue
+            try: seen[stat.st_ino]
+            except KeyError: seen[stat.st_ino] = True
+            else: continue
+            total_size += stat.st_size
+    return total_size
+#------------------------------------------------------------------------------
+#
 def generate_dcm_index_for_pid_pname(dcm_root_0, dcm_root_1):
     """
     :param dcm_root:
@@ -194,7 +209,24 @@ def copy_folder_info(dcm_root_0, dcm_root_1):
     :return:
     """
     return
+<<<<<<< HEAD
+#------------------------------------------------------------------------------
+#
+def get_subfold_info(directory_root):
+    """
+    :param directory_root:
+    :return:
+    """
+    pnames = os.listdir(directory_root)
+    pname_info = {'PIDPNAME': [], 'Size(MB)': []}
+    for pname in pnames:
+        pname_root = os.path.join(directory_root, pname)
+        pname_info['PIDPNAME'].append(pname)
+        pname_info['Size(MB)'].append(_get_path_size(pname_root)/(1024**3))
+    return pd.DataFrame(pname_info)
+=======
 
+>>>>>>> 028286cb95d540cc42383ba1e4b179d096fd0d44
 
 #------------------------------------------------------------------------------
 #
@@ -246,16 +278,32 @@ def cp_nii_by_info(tmp_folder, nii_folder, info_xlsx_file):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     dcmroot = '\\\\dataserver03\\ai_test\\Neurolab\\ct-ctp-strokeProject\\download'
     #dcmroot_2 = 'D:\\ISLES\\RAPID_HX\\001_DCM'
 
     df_0 = generate_dcm_index(os.path.join(dcmroot, 'RAPID_Result_0'))
     df_1 = generate_dcm_index(os.path.join(dcmroot, 'RAPID_Result_1'))
+=======
+    dcmroot = 'H:\\data\\SHA_6TH_HOSPITAL\\001_STROKE_CTP'
+    df = get_subfold_info(os.path.join(dcmroot, '001_DICOM_HUAXI_HOSPITAL'))
+    df.to_csv(os.path.join(dcmroot, 'dcm_size.csv'))
+    #dcmroot_2 = 'D:\\ISLES\\RAPID_HX\\001_DCM'
+    """
+    csv_file = os.path.join(dcmroot_2, 'convert_working.csv')
+    df_0 = generate_dcm_index_for_pid_pname(os.path.join(dcmroot, 'RAPID_Result_0'), dcmroot_2)
+    df_1 = generate_dcm_index_for_pid_pname(os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+>>>>>>> baf14636f00de31e5a0d3b139fa64731392d08dd
     df = pd.concat([df_0, df_1], axis=0)
     df.to_excel(os.path.join('D:\\stroke', 'ctp.xlsx'))
 
     # organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_0'), dcmroot_2)
+<<<<<<< HEAD
     #organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+=======
+    organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+    """
+>>>>>>> baf14636f00de31e5a0d3b139fa64731392d08dd
 
     #organize_dcm_byuid(dcmroot, dcmroot_2)
 
