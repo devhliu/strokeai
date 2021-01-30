@@ -246,17 +246,16 @@ def cp_nii_by_info(tmp_folder, nii_folder, info_xlsx_file):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    dcmroot = 'E:\\test'
-    dcmroot_2 = 'D:\\ISLES\\RAPID_HX\\001_DCM'
+    dcmroot = '\\\\dataserver03\\ai_test\\Neurolab\\ct-ctp-strokeProject\\download'
+    #dcmroot_2 = 'D:\\ISLES\\RAPID_HX\\001_DCM'
 
-    csv_file = os.path.join(dcmroot_2, 'convert_working.csv')
-    df_0 = generate_dcm_index_for_pid_pname(os.path.join(dcmroot, 'RAPID_Result_0'), dcmroot_2)
-    df_1 = generate_dcm_index_for_pid_pname(os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+    df_0 = generate_dcm_index(os.path.join(dcmroot, 'RAPID_Result_0'))
+    df_1 = generate_dcm_index(os.path.join(dcmroot, 'RAPID_Result_1'))
     df = pd.concat([df_0, df_1], axis=0)
-    df.to_csv(csv_file)
+    df.to_excel(os.path.join('D:\\stroke', 'ctp.xlsx'))
 
     # organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_0'), dcmroot_2)
-    organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
+    #organize_by_csv(csv_file, os.path.join(dcmroot, 'RAPID_Result_1'), dcmroot_2)
 
     #organize_dcm_byuid(dcmroot, dcmroot_2)
 
