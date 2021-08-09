@@ -142,6 +142,7 @@ def organize_by_uid(src_dcm_root, target_dcm_root):
     """
     for sub_root, _, files in os.walk(src_dcm_root):
         if len(files) <= 0: continue
+        print(sub_root)
         for file in files:
             dcm_file = os.path.join(sub_root, file)
             if dcm_file.endswith('.json'): continue
@@ -149,6 +150,9 @@ def organize_by_uid(src_dcm_root, target_dcm_root):
             if dcm_file.endswith('.nii.gz'): continue
             if dcm_file.endswith('.img'): continue
             if dcm_file.endswith('.hdr'): continue
+            if dcm_file.endswith('DICOMDIR'): continue
+            if dcm_file.endswith('LOCKFILE'): continue
+            if dcm_file.endswith('VERSION'): continue
             if not is_dicom(dcm_file): continue
             ds = pydicom.read_file(dcm_file, stop_before_pixels=True, force=True)
             suid = str(ds.SeriesInstanceUID)
@@ -156,7 +160,57 @@ def organize_by_uid(src_dcm_root, target_dcm_root):
             filename = '{:06d}.dcm'.format(int(ds.InstanceNumber))
             file_root = os.path.join(target_dcm_root, study_uid, suid)
             os.makedirs(file_root, exist_ok=True)
-            shutil.copyfile(dcm_file, os.path.join(file_root, filename))
+            out_file = os.path.join(file_root, filename)
+            if os.path.exists(out_file): continue
+            shutil.copyfile(dcm_file, out_file)
+    return
+#------------------------------------------------------------------------------
+#
+def organize_by_uid_dcm(src_dcm_root, target_dcm_root):
+    """
+    :param src_dcm_root:
+    :param target_dcm_root:
+    :return:
+    """
+    for sub_root, _, files in os.walk(src_dcm_root):
+        if len(files) <= 0: continue
+        print(sub_root)
+
+        # check whether files[0] in dcm
+        dcm_file = os.path.join(sub_root, files[0])
+        if dcm_file.endswith('.json'): continue
+        if dcm_file.endswith('.nii'): continue
+        if dcm_file.endswith('.nii.gz'): continue
+        if dcm_file.endswith('.img'): continue
+        if dcm_file.endswith('.hdr'): continue
+        if dcm_file.endswith('DICOMDIR'): continue
+        if dcm_file.endswith('LOCKFILE'): continue
+        if dcm_file.endswith('VERSION'): continue
+        if not is_dicom(dcm_file): continue
+        ds = pydicom.read_file(dcm_file, stop_before_pixels=True, force=True)
+        study_uid = str(ds.StudyInstanceUID)
+        if os.path.exists(os.path.join(os.path.dirname(target_dcm_root), '001_DCM', study_uid)): continue
+
+        for file in files:
+            dcm_file = os.path.join(sub_root, file)
+            if dcm_file.endswith('.json'): continue
+            if dcm_file.endswith('.nii'): continue
+            if dcm_file.endswith('.nii.gz'): continue
+            if dcm_file.endswith('.img'): continue
+            if dcm_file.endswith('.hdr'): continue
+            if dcm_file.endswith('DICOMDIR'): continue
+            if dcm_file.endswith('LOCKFILE'): continue
+            if dcm_file.endswith('VERSION'): continue
+            if not is_dicom(dcm_file): continue
+            ds = pydicom.read_file(dcm_file, stop_before_pixels=True, force=True)
+            suid = str(ds.SeriesInstanceUID)
+            study_uid = str(ds.StudyInstanceUID)
+            filename = '{:06d}.dcm'.format(int(ds.InstanceNumber))
+            file_root = os.path.join(os.path.dirname(target_dcm_root), '000_RAW', study_uid, suid)
+            os.makedirs(file_root, exist_ok=True)
+            out_file = os.path.join(file_root, filename)
+            if os.path.exists(out_file): continue
+            shutil.copyfile(dcm_file, out_file)
     return
 #------------------------------------------------------------------------------
 #
@@ -186,11 +240,11 @@ def extract_hb_dwi(niix_root):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    #dcmroot = 'D:\\UII\\nanjing_CT_DWI\\ROI1'
+    dcmroot = '\\\\dataserver03\\ai_test\\Neurolab\\ct-ctp-strokeProject\\renji_377'
     #tmproot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\tmp'
     #niiroot = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\002_niix_3'
-    #dcmroot_1 = 'D:\\DICOMDB\\Shanghai_6th_Hospital\\001_Stroke_DWI\\001_dicom_004'
-    #organize_by_uid(dcmroot, dcmroot_1)
+    dcmroot_1 = 'D:\\hl\\renji_377\\000_RAW'
+    organize_by_uid_dcm(dcmroot, dcmroot_1)
 
 
     # step 1: dump dcm tags into dump.xlsx
@@ -213,6 +267,7 @@ if __name__ == '__main__':
     #create_nii_by_info(niiroot, os.path.join(dcmroot_1, 'dump_working.xlsx'))
     # extract_hb_dwi(niiroot)
 
+    """
     niix_root = 'D:\\UII\\organizedImages'
     tar_niix_root = 'H:\\data\\CT_ASPECT\\nomi'
     filenames = ['brain_aspects_seg.nii.gz', 'ct_3D_rotated_skull_stripped.nii.gz',
@@ -235,3 +290,4 @@ if __name__ == '__main__':
             for f1, f2 in zip(filenames, tfilenames):
                 shutil.copyfile(os.path.join(os.path.join(niix_root, sub_patient_root, f1)),
                                 os.path.join(os.path.join(sub, f2)))
+    """
